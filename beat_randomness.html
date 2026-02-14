@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Can You Beat Randomness?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: lavender;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    #readyScreen, #game {
+      display: none;
+    }
+
+    .bar-container {
+      width: 200px;
+      margin: 10px auto;
+      background: #ddd;
+      height: 20px;
+      border-radius: 5px;
+    }
+
+    .bar {
+      height: 100%;
+      background: #6a5acd;
+      width: 0%;
+      border-radius: 5px;
+    }
+
+    .choices {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Welcome -->
+<div id="welcome">
+  <h1>Welcome</h1>
+  <button onclick="showReady()">Continue</button>
+</div>
+
+<!-- Ready -->
+<div id="readyScreen">
+  <h1>Are you ready to beat randomness?</h1>
+  <button onclick="startGame()">Yes</button>
+  <button onclick="goBack()">No</button>
+</div>
+
+<!-- Game -->
+<div id="game">
+  <h1>Can You Beat Randomness?</h1>
+  <p>Choose A or B</p>
+
+  <button onclick="play('A')">A</button>
+  <button onclick="play('B')">B</button>
+
+  <p id="roundText"></p>
+
+  <div>
+    <p>You</p>
+    <div class="bar-container"><div id="humanBar" class="bar"></div></div>
+
+    <p>Random</p>
+    <div class="bar-container"><div id="randomBar" class="bar"></div></div>
+  </div>
+
+  <div id="choicesHuman" class="choices"></div>
+  <div id="choicesRandom" class="choices"></div>
+  <div id="finalResult"></div>
+
+  <button onclick="restartGame()">Restart</button>
+</div>
+
+<script>
+  const totalRounds = 5;
+  let round, humanScore, randomScore, humanChoices, randomChoices;
+
+  function resetData() {
+    round = 0;
+    humanScore = 0;
+    randomScore = 0;
+    humanChoices = [];
+    randomChoices = [];
+  }
+
+  resetData();
+
+  function showReady() {
+    welcome.style.display = "none";
+    readyScreen.style.display = "block";
+  }
+
+  function goBack() {
+    readyScreen.style.display = "none";
+    welcome.style.display = "block";
+  }
+
+  function startGame() {
+    readyScreen.style.display = "none";
+    game.style.display = "block";
+  }
+
+  function play(choice) {
+    if (round >= totalRounds) return;
+
+    const randomChoice = Math.random() < 0.5 ? "A" : "B";
+
+    humanChoices.push(choice);
+    randomChoices.push(randomChoice);
+
+    choice === randomChoice ? humanScore++ : randomScore++;
+    round++;
+
+    updateBars();
+    roundText.innerText = `Round ${round} of ${totalRounds}`;
+
+    if (round === totalRounds) finishGame();
+  }
+
+  function updateBars() {
+    humanBar.style.width = (humanScore / totalRounds) * 100 + "%";
+    randomBar.style.width = (randomScore / totalRounds) * 100 + "%";
+  }
+
+  function finishGame() {
+    choicesHuman.innerHTML = `<strong>Your choices:</strong> ${humanChoices.join(", ")}`;
+    choicesRandom.innerHTML = `<strong>Random choices:</strong> ${randomChoices.join(", ")}`;
+
+    finalResult.innerHTML =
+      `<br><strong>Final Score</strong><br>
+       You: ${humanScore}<br>
+       Random: ${randomScore}<br><br>
+       ${humanScore >= randomScore ? "You matched randomness." : "Randomness wins."}`;
+
+    logResult();
+  }
+
+  function logResult() {
+    const logs = JSON.parse(localStorage.getItem("randomnessLogs")) || [];
+    logs.push({
+      humanScore,
+      randomScore,
+      humanChoices,
+      randomChoices,
+      time: new Date().toLocaleString()
+    });
+    localStorage.setItem("randomnessLogs", JSON.stringify(logs));
+  }
+
+  function restartGame() {
+    resetData();
+    humanBar.style.width = "0%";
+    randomBar.style.width = "0%";
+    roundText.innerText = "";
+    choicesHuman.innerText = "";
+    choicesRandom.innerText = "";
+    finalResult.innerText = "";
+  }
+</script>
+
+</body>
+</html>
