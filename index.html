@@ -1,176 +1,226 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <title>Beat Randomness</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Can You Beat Randomness?</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
   <style>
     body {
-      font-family: Arial, sans-serif;
+      margin: 0;
+      font-family: 'Press Start 2P', cursive;
+      background: linear-gradient(180deg, #6fbf73, #3a8f5b, #1f5f3b);
+      color: #ffffff;
       text-align: center;
-      padding: 40px;
-      background-color: lavender;
+      padding: 20px;
+    }
+
+    .screen {
+      display: none;
+      max-width: 420px;
+      margin: auto;
+    }
+
+    .active {
+      display: block;
+    }
+
+    h1 {
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    p {
+      font-size: 0.7rem;
+      line-height: 1.6;
     }
 
     button {
-      font-size: 18px;
-      padding: 10px 20px;
-      margin: 10px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 16px;
+      margin: 12px 0;
+      width: 100%;
+      background-color: #6b8e23;
+      border: 3px solid #2e4e1f;
+      color: white;
       cursor: pointer;
     }
 
-    #readyScreen, #game {
-      display: none;
+    button:hover {
+      background-color: #7fae2e;
     }
 
-    .bar-container {
-      width: 200px;
-      margin: 10px auto;
-      background: #ddd;
-      height: 20px;
-      border-radius: 5px;
+    .choice-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .choice-buttons button {
+      flex: 1;
+      font-size: 1.2rem;
     }
 
     .bar {
-      height: 100%;
-      background: #6a5acd;
-      width: 0%;
-      border-radius: 5px;
+      height: 26px;
+      background-color: #8b4513;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      padding-left: 8px;
+      font-size: 0.6rem;
     }
 
-    .choices {
-      margin-top: 10px;
-      font-size: 16px;
+    @media (max-width: 480px) {
+      button {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<!-- Welcome -->
-<div id="welcome">
-  <h1>Welcome</h1>
-  <button onclick="showReady()">Continue</button>
+<div id="welcome" class="screen active">
+  <h1>WELCOME</h1>
+  <p>Can you beat randomness?</p>
+  <button onclick="goToReady()">Touch to Continue</button>
 </div>
 
-<!-- Ready -->
-<div id="readyScreen">
-  <h1>Are you ready to beat randomness?</h1>
-  <button onclick="startGame()">Yes</button>
-  <button onclick="goBack()">No</button>
+<div id="ready" class="screen">
+  <h1>ARE YOU READY?</h1>
+  <button onclick="startGame()">YES</button>
+  <button onclick="goToWelcome()">NO</button>
 </div>
 
-<!-- Game -->
-<div id="game">
-  <h1>Can You Beat Randomness?</h1>
-  <p>Choose A or B</p>
+<div id="game" class="screen">
+  <h1>CHOOSE A LETTER</h1>
+  <p>Round <span id="round">1</span> of 5</p>
 
-  <button onclick="play('A')">A</button>
-  <button onclick="play('B')">B</button>
-
-  <p id="roundText"></p>
-
-  <div>
-    <p>You</p>
-    <div class="bar-container"><div id="humanBar" class="bar"></div></div>
-
-    <p>Random</p>
-    <div class="bar-container"><div id="randomBar" class="bar"></div></div>
+  <div class="choice-buttons">
+    <button id="btn1" onclick="makeChoice(0)"></button>
+    <button id="btn2" onclick="makeChoice(1)"></button>
   </div>
+</div>
 
-  <div id="choicesHuman" class="choices"></div>
-  <div id="choicesRandom" class="choices"></div>
-  <div id="finalResult"></div>
+<div id="result" class="screen">
+  <h1>FINAL RESULT</h1>
 
-  <button onclick="restartGame()">Restart</button>
+  <p id="scoreText"></p>
+
+  <div class="bar" id="youBar"></div>
+  <div class="bar" id="randomBar"></div>
+
+  <p id="outcomeText"></p>
+
+  <p><strong>Your choices:</strong><br><span id="yourChoices"></span></p>
+  <p><strong>Random choices:</strong><br><span id="randomChoices"></span></p>
+
+  <button onclick="startGame()">PLAY AGAIN</button>
+  <button onclick="goToWelcome()">EXIT</button>
 </div>
 
 <script>
-  const totalRounds = 5;
-  let round, humanScore, randomScore, humanChoices, randomChoices;
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-  function resetData() {
-    round = 0;
-    humanScore = 0;
-    randomScore = 0;
-    humanChoices = [];
-    randomChoices = [];
+  let round = 1;
+  let youScore = 0;
+  let randomScore = 0;
+
+  let currentLetters = [];
+  let yourHistory = [];
+  let randomHistory = [];
+
+  function switchScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
   }
 
-  resetData();
-
-  function showReady() {
-    welcome.style.display = "none";
-    readyScreen.style.display = "block";
+  function goToWelcome() {
+    switchScreen('welcome');
   }
 
-  function goBack() {
-    readyScreen.style.display = "none";
-    welcome.style.display = "block";
+  function goToReady() {
+    switchScreen('ready');
   }
 
   function startGame() {
-    readyScreen.style.display = "none";
-    game.style.display = "block";
+    round = 1;
+    youScore = 0;
+    randomScore = 0;
+    yourHistory = [];
+    randomHistory = [];
+    setupRound();
+    switchScreen('game');
   }
 
-  function play(choice) {
-    if (round >= totalRounds) return;
+  function setupRound() {
+    document.getElementById('round').textContent = round;
 
-    const randomChoice = Math.random() < 0.5 ? "A" : "B";
+    let a = alphabet[Math.floor(Math.random() * 26)];
+    let b;
+    do {
+      b = alphabet[Math.floor(Math.random() * 26)];
+    } while (b === a);
 
-    humanChoices.push(choice);
-    randomChoices.push(randomChoice);
+    currentLetters = [a, b];
 
-    choice === randomChoice ? humanScore++ : randomScore++;
+    document.getElementById('btn1').textContent = a;
+    document.getElementById('btn2').textContent = b;
+  }
+
+  function makeChoice(index) {
+    const youPick = currentLetters[index];
+    const randomPick = currentLetters[Math.floor(Math.random() * 2)];
+
+    yourHistory.push(youPick);
+    randomHistory.push(randomPick);
+
+    if (youPick === randomPick) {
+      youScore++;
+    } else {
+      randomScore++;
+    }
+
     round++;
 
-    updateBars();
-    roundText.innerText = `Round ${round} of ${totalRounds}`;
-
-    if (round === totalRounds) finishGame();
+    if (round <= 5) {
+      setupRound();
+    } else {
+      showResult();
+    }
   }
 
-  function updateBars() {
-    humanBar.style.width = (humanScore / totalRounds) * 100 + "%";
-    randomBar.style.width = (randomScore / totalRounds) * 100 + "%";
-  }
+  function showResult() {
+    document.getElementById('scoreText').textContent =
+      `You: ${youScore} | Random: ${randomScore}`;
 
-  function finishGame() {
-    choicesHuman.innerHTML = `<strong>Your choices:</strong> ${humanChoices.join(", ")}`;
-    choicesRandom.innerHTML = `<strong>Random choices:</strong> ${randomChoices.join(", ")}`;
+    document.getElementById('youBar').style.width = (youScore * 20) + "%";
+    document.getElementById('randomBar').style.width = (randomScore * 20) + "%";
 
-    finalResult.innerHTML =
-      `<br><strong>Final Score</strong><br>
-       You: ${humanScore}<br>
-       Random: ${randomScore}<br><br>
-       ${humanScore >= randomScore ? "You matched randomness." : "Randomness wins."}`;
+    document.getElementById('youBar').textContent = `YOU (${youScore})`;
+    document.getElementById('randomBar').textContent = `RANDOM (${randomScore})`;
 
-    logResult();
-  }
+    let outcome;
+    if ((youScore === 2 && randomScore === 3) || (youScore === 3 && randomScore === 2)) {
+      outcome = "YOU MATCHED RANDOMNESS";
+    } else if (youScore > randomScore) {
+      outcome = "YOU BEAT RANDOMNESS";
+    } else {
+      outcome = "RANDOM BEAT YOU";
+    }
 
-  function logResult() {
-    const logs = JSON.parse(localStorage.getItem("randomnessLogs")) || [];
-    logs.push({
-      humanScore,
-      randomScore,
-      humanChoices,
-      randomChoices,
-      time: new Date().toLocaleString()
-    });
-    localStorage.setItem("randomnessLogs", JSON.stringify(logs));
-  }
+    document.getElementById('outcomeText').textContent = outcome;
+    document.getElementById('yourChoices').textContent = yourHistory.join(" → ");
+    document.getElementById('randomChoices').textContent = randomHistory.join(" → ");
 
-  function restartGame() {
-    resetData();
-    humanBar.style.width = "0%";
-    randomBar.style.width = "0%";
-    roundText.innerText = "";
-    choicesHuman.innerText = "";
-    choicesRandom.innerText = "";
-    finalResult.innerText = "";
+    switchScreen('result');
   }
 </script>
 
 </body>
 </html>
-
-
